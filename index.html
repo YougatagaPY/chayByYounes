@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Simple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .chat-container {
+            width: 90%;
+            max-width: 800px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .message-bubble {
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            max-width: 60%;
+            margin-bottom: 20px; /* espace pour le pseudo et l'heure */
+        }
+
+        .message-bubble.sent {
+            margin-left: auto;
+        }
+
+        .message-info {
+            font-size: 0.8em;
+            color: #666;
+            text-align: right;
+            margin-top: -15px;
+        }
+
+        .chat-header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .chat-messages {
+            padding: 20px;
+            height: 300px;
+            overflow-y: scroll;
+            background-color: #e9e9e9;
+        }
+
+        .chat-form {
+            padding: 20px;
+            background-color: #f2f2f2;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-form input, .chat-form button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .chat-form button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        .chat-form button:hover {
+            background-color: #0056b3;
+        }
+
+        #start-screen {
+            background-color: rgba(0, 0, 0, 0.5);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        #start-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <form id="start-form">
+            <input type="text" id="pseudo" placeholder="Entrez votre pseudo" required>
+            <input type="color" id="color" value="#007bff" title="Choisissez votre couleur">
+            <button type="submit">Commencer le chat</button>
+        </form>
+    </div>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>Chat By Younes</h2>
+        </div>
+        <div class="chat-messages"></div>
+        <form class="chat-form" id="form">
+            <input type="text" id="msg" placeholder="Tapez un message..." required>
+            <button type="submit">Envoyer</button>
+        </form>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const socket = io();
+            let pseudo, color;
+
+            document.getElementById('start-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                pseudo = document.getElementById('pseudo').value;
+                color = document.getElementById('color').value;
+                document.getElementById('start-screen').style.display = 'none';
+            });
+
+            const form = document.getElementById('form');
+            const input = document.getElementById('msg');
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (input.value) {
+                    const messageData = {
+                        msg: input.value, 
+                        pseudo: pseudo,
+                        color: color,
+                        timestamp: new Date().toLocaleTimeString()
+                    };
+                    socket.emit('chat message', messageData);
+                    input.value = '';
+                }
+            });
+
+            socket.on('chat message', (data) => {
+                const messagesDiv = document.querySelector('.chat-messages');
+                const newMessageBubble = document.createElement('div');
+                newMessageBubble.classList.add('message-bubble');
+                if (data.pseudo === pseudo) {
+                    newMessageBubble.classList.add('sent');
+                }
+                newMessageBubble.style.backgroundColor = data.color;
+                newMessageBubble.textContent = data.msg;
+                const messageInfo = document.createElement('div');
+                messageInfo.classList.add('message-info');
+                messageInfo.textContent = `${data.pseudo} @ ${data.timestamp}`;
+                messagesDiv.appendChild(newMessageBubble);
+                messagesDiv.appendChild(messageInfo);
+                window.scrollTo(0, document.body.scrollHeight);
+            });
+        });
+    </script>
+</body>
+</html>
